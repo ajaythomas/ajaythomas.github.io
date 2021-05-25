@@ -6,9 +6,7 @@ indexing: true
 sitemap: true
 ---
 
-## Books
-
-I try to read around 10 books a year. Here is a list of books I have enjoyed in a random order.:
+I try to read around 10 books a year. Here is a list of books I have enjoyed in a random order:
 
 1. [Red Notice](https://www.amazon.com/Red-Notice-Finance-Murder-Justice/dp/1476755744)
 2. [Liar's Poker](https://www.amazon.com/gp/product/B003E20ZRY)
