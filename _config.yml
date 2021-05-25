@@ -125,6 +125,8 @@ navigation_header:
   url: /bookshelf/
 - title: Categories
   url: /categories/
+- title: Subscribe
+  url: /subscribe/
 #- title: Search
 #  url: /search/
 #- title: Fork Alembic
