@@ -1,5 +1,5 @@
 ---
-title: Bookshelf
+title: Book Shelf
 indexing: true
 sitemap: true
 ---

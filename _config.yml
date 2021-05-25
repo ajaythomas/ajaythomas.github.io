@@ -122,10 +122,10 @@ navigation_header:
 #  url: /elements/
 - title: Blog
   url: /blog/
-- title: Categories
-  url: /categories/
 - title: Book Shelf
   url: /bookshelf/
+- title: Categories
+  url: /categories/
 #- title: Search
 #  url: /search/
 #- title: Fork Alembic
