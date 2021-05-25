@@ -5,7 +5,7 @@ feature_text: |
 feature_image: "/assets/SF.jpg"
 ---
 
-{% include figure.html image="/assets/AjayJacket.JPG" widht=100, height=100 %}
+{% include figure.html image="/assets/AjayJacket.JPG" %}
 
 I am Ajay Thomas, a software engineer in the identity and security space. In my spare time, I try to run, read and write, in that order. 
 
