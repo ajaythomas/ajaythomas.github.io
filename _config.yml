@@ -62,7 +62,6 @@ collections:
   posts:
     title: Posts # Needed for Siteleaf
     output: true
-    description: "My musings on tech and finance" # The post list page content
     feature_text: |
       ## Blog
     feature_image: "/assets/SF.jpg"
