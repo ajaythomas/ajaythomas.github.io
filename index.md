@@ -1,5 +1,5 @@
 ---
-title: Start Here
+title: About
 feature_text: |
   ## Thomas Thoughts
 feature_image: "/assets/SF.jpg"
