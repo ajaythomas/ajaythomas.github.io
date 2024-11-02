@@ -7,9 +7,11 @@ feature_image: "/assets/SF.jpg"
 
 {% include figure.html image="/assets/AjayJacket.JPG" %}
 
-I am Ajay Thomas, a software engineer in the identity and security space. In my spare time, I try to run, read and write, in that order. 
+I am Ajay Thomas, a software engineering manager in the identity and security space. In my spare time, I try to run, read and write, in that order. 
 
-I currently work at [Okta](https://www.okta.com/), an enterprise identity management company, building multi factor authentication. Here, I have worked on server side policy engine, public APIs, identity protocols like SAML and OIDC and framework for native multi factor operations like SMS, email, webauthn etc. Previously, I worked at [WinMagic](https://www.winmagic.com/), a Canadian data security company.
+I currently work at [dbt Labs](https://www.getdbt.com/) as an engineering manager in the [enterprise product security team](https://www.getdbt.com/security). dbt is the standard for data transformation workflow that lets teams quickly and collaboratively deploy analytics code with best practices like modularity, CI/CD, documentation and governance. 
+Before that, I was at [Okta](https://www.okta.com/), an enterprise identity management company, building multi factor authentication. Here, I have worked on server side policy engine, public APIs, identity protocols like SAML and OIDC and framework for native multi factor operations like SMS, email, webauthn etc.
+
 Outside of tech, I also enjoy reading about personal finance, and the economy at large.
 
 You can reach me on [{% include icon.html id="twitter" title="twitter" %}](https://twitter.com/ajayinc) or [{% include icon.html id="linkedin" title="linkedin" %}](https://www.linkedin.com/in/ajaythomas).
