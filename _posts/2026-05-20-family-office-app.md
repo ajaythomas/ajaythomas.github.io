@@ -6,6 +6,8 @@ feature_image: "https://picsum.photos/2560/600?image=872"
 published: false
 ---
 
+Public repo on [Github](https://github.com/ajaythomas/family_office/)
+
 For a while now, I have watched my dad painstakingly use a combination of Excel, handwritten notes and Finance watchlists to manage his household's investments. This was a good excuse to build a hobby app with Claude Code. It gave me the opportunity to experiment with a few technologies I wanted to experiment with:
 
 1. FastAPI for the Python backend
@@ -44,43 +46,99 @@ Regarding db models/tables, I recently learnt about:
     1. `autocommit=False`: This is the default and recommended setting. It ensures all operations happen within a transaction. You must explicitly call session.commit() to save changes or session.rollback() to discard them.
     1. `autoflush=False`: Disables "automatic" flushing. Normally, SQLAlchemy sends pending changes to the database right before you issue a query so the results are accurate. With this set to False, you must manually call session.flush() if you need the database to process changes (like generating an ID) before the final commit.
 
+### Login
+
+I added a simple google login using Google Identity Services (@react-oauth/google) that follows the OIDC implicit flow. To support this, I created an app in Google Cloud Console and on the screen `OAuth 2.0 client config screen > Authorized Javascript Origins`, I added the Vite frontend (local testing: http://localhost:5173 and whatever prod equivalent) which is where `@react-oauth/google` JavaScript runs. Google validates the origin of the page that initiates the sign-in flow, which is the browser loading the React app, not the FastAPI server (that listens on port 8000). Additionally, the Google app's client ID is specified in my `.env` file and used by my app to verify the Google ID token after the OIDC flow completes.
+
 ### Logging
 
+For logging, I used Python's built-in logging module by adding this to each file:
+`import logging logger = logging.getLogger(name)`
+Then, used it like so:
+`logger.info("User %s logged in", user.email) logger.error("Portfolio creation failed for user %s", user.id)`
+To read the logs, I would stream them from my app docker container:
+`docker compose logs -f app`
+An interesting thing I learnt about Python f-strings vis-a-vis logging was that even if f-strings are the modern Python convention for general string formatting; for logging - the `%s` style is preferred. Because the logger defers formatting until it knows the message will actually be emitted. If you wrote `logger.info(f"User {user.email} logged in")`, the f-string gets evaluated immediately regardless of log level, so you pay the formatting cost even when the log is filtered out. Everywhere else in the codebase, f-strings are the right call.
 
 ### Cedar Authorization
 
+One of the primary reasons to do this app was to learn more about the new-ish authorization language (released 2021) from AWS called Cedar. They have a managed version but I just used the opensource python SDK within my FastAPI app. Having worked in authorization for sometime, it was refreshing to use a simple readable language like Cedar that lets me create RBAC (role-based access control) and ABAC (attribute based access control) fairly easily. Though supporting ReBAC using Cedar felt forced, it was not a need for my app. ReBAC is better supported by Zanzibar-like languages namely [SpiceDB](https://authzed.com/spicedb) and [OpenFGA](https://openfga.dev/).
+
+Check out [Cedar's simple, short tutorial](https://cedarpolicy.com/en/tutorial/).
+
+The Cedar engine makes fast authorization decisions using:
+
+1. Data about principal and resource entities
+1. Additional context needed like IP address, user agent etc.
+1. Policy inventory i.e. all the permit and forbid policies matching against one or more principal, actions or resources specified in requests
+
+For my app, I defined [my Cedar policies and schema here](https://github.com/ajaythomas/family_office/tree/main/app/policies). This is then used ([example](https://github.com/ajaythomas/family_office/blob/main/app/routers/portfolios.py#L76)) throughout my app via an [authorize() method I defined](https://github.com/ajaythomas/family_office/blob/main/app/cedar_authz.py#L29).
 
 ## VSCode IDE and plugins
 
 1. Claude Code
-    1. Note that memory is separate and isolated between Claude Code interfaces (i.e. your conversation on VSCode Claude Code vs Claude Mac app vs Claude Code on your Mac terminal)
+    1. Claude Code on VSCode and ClaudeCode on terminal use the same memory but two separate conversation sessions. Each Claude Code session (terminal, VS Code extension, etc.) is independent with its own conversation context. They don't share messages or see each other's chat history. The shared memory files in ~/.claude/projects/ persist across sessions, so facts Claude saves there are available to both — but the actual conversation thread is separate in each interface.
 1. autoDocstring - python docstring generator
 1. Cedar (for my authz policies)
 1. Code Spell Checker
 1. Microsoft's tools like Container Tools, MyPy Type Checker, PostgresSQL (which I used to connect to both localhost and Hetzner cloud postgres db docker containers)
 1. Ruff
 
-## Docker containers and SSH
+## OAuth: Google Calendar
 
-https://docs.google.com/document/d/1a8ekIqG8aFFRYOUVkr8jhbk3opdssakfvs9Lw5MmP0c/edit?tab=t.fyv9kr8vxfco 
-Docker profiles https://github.com/ajaythomas/family_office/blob/main/docker-compose.yml 
+Along the same vein of the [login flow mentioned above](#login), Google Calendar integration (to support adding earnings dates of your stock tickers to your gCal) needs OAuth integration. For that:
+Go back to your app in the Google Cloud Console, and add the below endpoint to `Authorized redirect URIs`:
+`http://localhost:8000/auth/google-calendar/callback` (for local testing or a similar api endpoint in prod): This is needed for Google Calendar OAuth 2.0 authorization code flow. Google redirects the browser to our registered callback URL with an auth code.
+This is different from the Google login which uses Google Identity Services (@react-oauth/google) that follows the OIDC implicit flow. The login flow returns the signed ID JWT token directly to a JavaScript callback in the browser — no redirect URI involved. Google never redirects to the server; our frontend just calls `POST /auth/google` with the token it received. That's why no redirect URI is needed in Cloud Console for the login flow.
 
-## OAuth: Google Calendar 
+A few more additional steps are mentioned in [my project's README](https://github.com/ajaythomas/family_office/tree/main#google-calendar-integration).
 
+## Production Deployment (and some docker tips)
 
-## Production Deployment
+I wanted to be cloud agnostic so decided against a managed ecosystem like AWS lambda with managed Postgres or similar Azure setups. Because, I already had docker containers deployed locally, it was not much of a lift to deploy the same containers on an EC2 instance or in my case, a bare-bones Hetzner cloud instance. Based in EU, I was impressed with the lightweight and cheap instance, I was able to provision ($4 monthly).
 
-Hetzner Cloud
-Caddy file
-Env secrets 
+Details are mentioned [in my README](https://github.com/ajaythomas/family_office/tree/main#production-deploy-hetzner)
 
+I could SSH into my prod docker containers easily with SSH keys I setup for my Hetzner server. Setting up aliases in my bashrc file to SSH into the prod server and prod db and postgres connection from my VSCode IDE were some QoL improvements.
+
+### Docker Profiles
+
+Take a look at [my docker compose file](https://github.com/ajaythomas/family_office/blob/main/docker-compose.yml#L16). Only the db has no `profiles` attribute meaning it is the default profile. Other containers do.
+Docker profiles lets me control what starts by default (i.e. in local deployment, only the postgres docker container was needed). For prod, by specifying a separate prod profile, additional to postgres, the profile also container `api`, `web`, `caddy` containers too.
+So `docker compose up -d` in dev still starts only the DB which bound to port 127.0.0.1. Whereas, on my Hetzener server, I ran
+`COMPOSE_PROFILES=prod docker compose up -d --build` which told docker to run the prod profile.
+Note, the `--build` flag tells Compose to build images from the Dockerfiles before starting containers. Without --build it would look for pre-built images, which don't exist since we haven't pushed these containers to a registry.
+
+This strategy of docker profiles saved me the trouble of pushing a separate `deploy` branch (with these containers) to my repo remote in addition to `master`. More of my learnings from Docker are captured in [my notes](https://github.com/ajaythomas/family_office/tree/main/notes#docker).
+
+### Caddy
+
+For my prod deploy, I used [Caddy](https://caddyserver.com/), a free reverse proxy for my self hosted (on Hetzner Cloud) deployment that automatically provisions SSL certificates for my domain too. Caddy file [looks like so](https://github.com/ajaythomas/family_office/blob/main/Caddyfile).
 
 ## Claude Code
 
-Claude Plan https://github.com/ajaythomas/family_office/blob/main/plan.md
+ClaudeCode (using Sonnet 4.6) was a good partner in building this project. First, I worked with it to create [a plan](https://github.com/ajaythomas/family_office/blob/main/plan.md). With some back and forth, we landed on an architecture, what to build vs use OSS vs use vendors etc.
 
-Claude md https://github.com/ajaythomas/family_office/blob/main/CLAUDE.md 
+I defined a [Claude.md file](https://github.com/ajaythomas/family_office/blob/main/CLAUDE.md) that is read by Claude Code on each prompt. Keep it short under 200 lines so you're not wasting too many tokens.
 
+Both the plan and claude.md are living files which you continuously update through phases. 
+
+I had a [clear exit criteria](https://github.com/ajaythomas/family_office/blob/main/plan.md#build-order) for each phase - running tests, human in the loop for seeing live demo and commit to remote before Claude Code moved to the next phase.
+
+Sometimes, it jumped to wrong conclusions or did narrow fixes:
+
+1. When I asked it to update the gain/loss column to be percentage instead of absolute dollar amount, it made the change in FE vs in the portfolios.py class' method `get_portfolio()`. BE changes are always preferred so if a mobile client later introduced, it gets that too.
+1. When working on `cedar_authz.py`, it saw `cedarpy.isauthorized()` fail because of type errors and assumed it was broken on Python 3.14. But, `cedarpy` docs clearly says 3.14 is supported. It tried to downgrade my Python version (insane!) After I questioned it, it agreed that it jumped to a wrong conclusion. When I explicitly asked it to look at the principal/action/resource triplet it was sending to that method and try different variations of the parameters, it landed on a working cedar authorization call. I had to rein it back before it started downgrading my python versions.
+
+Where I really liked its support was the security review agent I ran before making my repo public. It caught a few holes:
+
+1. Weak password for my db mentioned in the docker-compose.yml file (that is NOT gitignored). Even if the db is exposed only to localhost (for both dev and prod; and prod needs me to SSH into it); better to use an env var for the same.
+1. An OAuth CSRF vuln because the state parameter was just using the user's ID.
 
 ## FrontEnd
 
+Frontend is new territory for me. I used a lot of Claude Code to get this up. Learnings captured in [my notes](https://github.com/ajaythomas/family_office/tree/main/notes#frontend).
+
+## Outro
+
+Overall, it was good to play with Cedar, Docker and Claude Code and get my hands dirty with a prod deploy on a barebones cloud instance. One meta learning was to be atomic with each commit and make them small, so I am not reverting a big chunk back each time I saw a bug. Software development best practices from 2021 are still relevant today.
