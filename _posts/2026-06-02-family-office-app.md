@@ -1,5 +1,5 @@
 ---
-title: Building with Claude Code: A FamilyOffice app written in FastAPI and React 
+title: Building with Claude Code - A FamilyOffice app written in FastAPI and React
 categories:
 - Tech
 feature_image: "https://picsum.photos/2560/600?image=872"
@@ -7,7 +7,7 @@ feature_image: "https://picsum.photos/2560/600?image=872"
 
 Public repo on [Github](https://github.com/ajaythomas/family_office/) and app live on <https://familyoffice.thomasthoughts.com>
 
-For a while now, I have watched my dad painstakingly use a combination of Excel, handwritten notes and Finance watchlists to manage his household's investments. This was a good excuse to build a hobby app with Claude Code. It gave me the opportunity to experiment with a few technologies I wanted to experiment with:
+For a while now, I have watched my dad painstakingly use a combination of Excel, handwritten notes and Finance watchlists to manage his household's investments. This was a good excuse to build a hobby app with Claude Code. It gave me the opportunity to experiment with a few technologies:
 
 1. FastAPI for the Python backend
     1. uv for Python package management
@@ -121,7 +121,7 @@ This strategy of docker profiles saved me the trouble of pushing a separate `dep
 
 For my prod deploy, I used [Caddy](https://caddyserver.com/), a free reverse proxy for my self hosted (on Hetzner Cloud) deployment that automatically provisions SSL certificates for my domain too. Caddy file [looks like so](https://github.com/ajaythomas/family_office/blob/main/Caddyfile).
 
-Around the same time, I moved my domain `thomasthoughts.com` (and its subdomain that I use for this app <https://familyoffice.thomasthoughts.com>) from SquareSpace to CloudFlare. After the 10-day domain transfer, I got TLS termination errors on my prod app. My unauthenticated page on my domain would resolve ok, but when I sign in with Google, I would get an error `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`. It confirmed that the SSL handshake was failing — Caddy didn't have a valid cert for `api.familyoffice.thomasthoughts.com`. This was because when I copied over A records from SquareSpace to CloudFlare, both api.familyoffice.thomasthoughts.com and familyoffice.thomasthoughts.com correctly pointed to my Hetzner server IP but proxy status had the orange cloud "Proxied" next to it. This meant Cloudflare is terminating SSL, which conflicts with Caddy also trying to manage SSL. Caddy can't complete the Let's Encrypt challenge through Cloudflare's proxy. So, I set both A records on CloudFlare to grey cloud (DNS only) so traffic goes directly to my Hetzner server and Caddy manages the certs itself.
+Around the same time, I moved my domain `thomasthoughts.com` (and its subdomain that I use for this app <https://familyoffice.thomasthoughts.com>) from SquareSpace to CloudFlare. After the 10-day domain transfer, I got TLS termination errors on my prod app. My unauthenticated page on my domain would resolve ok, but when I sign in with Google, I would get an error `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`. It confirmed that the SSL handshake was failing — Caddy didn't have a valid cert for `api.familyoffice.thomasthoughts.com`. This was because when I copied over `A records` from SquareSpace to CloudFlare, both `api.familyoffice.thomasthoughts.com` and `familyoffice.thomasthoughts.com` correctly pointed to my Hetzner server IP but proxy status had the orange cloud "Proxied" next to it. This meant Cloudflare is terminating SSL, which conflicts with Caddy also trying to manage SSL. Caddy can't complete the Let's Encrypt challenge through Cloudflare's proxy. So, I set both A records on CloudFlare to grey cloud (DNS only) so traffic goes directly to my Hetzner server and Caddy manages the certs itself.
 
 ## Claude Code
 
