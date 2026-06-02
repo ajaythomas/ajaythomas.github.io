@@ -9,13 +9,13 @@ Public repo on [Github](https://github.com/ajaythomas/family_office/) and app li
 
 For a while now, I have watched my dad painstakingly use a combination of Excel, handwritten notes and Finance watchlists to manage his household's investments. This was a good excuse to build a hobby app with Claude Code. It gave me the opportunity to experiment with a few technologies:
 
-    1. FastAPI for the Python backend
-        1. uv for Python package management
-        1. Alembic for database migrations
-    1. React for the frontend and Vite (serving as the frontend build tool)
-    1. Docker containers for local and production deployment
-    1. Cedar as an authorization policy language (for defining roles and permissions of my app's end users)
-    1. OAuth 2.0 for Google Calendar integration
+1. FastAPI for the Python backend
+    1. uv for Python package management
+    1. Alembic for database migrations
+1. React for the frontend and Vite (serving as the frontend build tool)
+1. Docker containers for local and production deployment
+1. Cedar as an authorization policy language (for defining roles and permissions of my app's end users)
+1. OAuth 2.0 for Google Calendar integration
 
 I also didn't want to be knee deep in any cloud platform ecosystem, so to productionize the app - I used the Hetzner cloud vs managed AWS offerings or other app platforms (Railway, Render, Vercel etc.)
 
