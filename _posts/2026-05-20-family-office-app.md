@@ -3,10 +3,9 @@ title: Building with Claude Code: A FamilyOffice app written in FastAPI and Reac
 categories:
 - Tech
 feature_image: "https://picsum.photos/2560/600?image=872"
-published: false
 ---
 
-Public repo on [Github](https://github.com/ajaythomas/family_office/)
+Public repo on [Github](https://github.com/ajaythomas/family_office/) and app live on <https://familyoffice.thomasthoughts.com>
 
 For a while now, I have watched my dad painstakingly use a combination of Excel, handwritten notes and Finance watchlists to manage his household's investments. This was a good excuse to build a hobby app with Claude Code. It gave me the opportunity to experiment with a few technologies I wanted to experiment with:
 
@@ -100,6 +99,13 @@ I wanted to be cloud agnostic so decided against a managed ecosystem like AWS la
 Details are mentioned [in my README](https://github.com/ajaythomas/family_office/tree/main#production-deploy-hetzner)
 
 I could SSH into my prod docker containers easily with SSH keys I setup for my Hetzner server. Setting up aliases in my bashrc file to SSH into the prod server and prod db and postgres connection from my VSCode IDE were some QoL improvements.
+When connecting to my local db, because it is the same machine - the VSCode Postgres connection was straightforward. Using the settings mentioned on `docker-compose.yml`, I just specified server name as localhost, used password authentication specificying username and password from docker compose file. Finally, also mention the db name (in my case `family_office`) and the port `5432`. To connect to the prod db, there is a preReq step of opening the ssh tunnel to my Hetzner server. For that:
+
+1. Create an SSH key on your local machine with this command: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519_hetzner`
+1. Then, go to your Hetzner portal, add that SSH key. Get the Hetzner server's IP
+1. On a new terminal on your machine, run this command (save it an alias) and a process will be actively running - so keep that tab open
+`ssh -i ~/.ssh/id_ed25519_hetzner -L 5433:127.0.0.1:5432 root@<HetznerServerIP> -N`
+This means we are listening on port 5433 on out local machine, and tunnelling traffic to 127.0.0.1:5432 on the remote server. The `-N` option just means don't execute any remote command — just keep the tunnel open.
 
 ### Docker Profiles
 
@@ -115,15 +121,17 @@ This strategy of docker profiles saved me the trouble of pushing a separate `dep
 
 For my prod deploy, I used [Caddy](https://caddyserver.com/), a free reverse proxy for my self hosted (on Hetzner Cloud) deployment that automatically provisions SSL certificates for my domain too. Caddy file [looks like so](https://github.com/ajaythomas/family_office/blob/main/Caddyfile).
 
+Around the same time, I moved my domain `thomasthoughts.com` (and its subdomain that I use for this app <https://familyoffice.thomasthoughts.com>) from SquareSpace to CloudFlare. After the 10-day domain transfer, I got TLS termination errors on my prod app. My unauthenticated page on my domain would resolve ok, but when I sign in with Google, I would get an error `ERR_SSL_VERSION_OR_CIPHER_MISMATCH`. It confirmed that the SSL handshake was failing — Caddy didn't have a valid cert for `api.familyoffice.thomasthoughts.com`. This was because when I copied over A records from SquareSpace to CloudFlare, both api.familyoffice.thomasthoughts.com and familyoffice.thomasthoughts.com correctly pointed to my Hetzner server IP but proxy status had the orange cloud "Proxied" next to it. This meant Cloudflare is terminating SSL, which conflicts with Caddy also trying to manage SSL. Caddy can't complete the Let's Encrypt challenge through Cloudflare's proxy. So, I set both A records on CloudFlare to grey cloud (DNS only) so traffic goes directly to my Hetzner server and Caddy manages the certs itself.
+
 ## Claude Code
 
 ClaudeCode (using Sonnet 4.6) was a good partner in building this project. First, I worked with it to create [a plan](https://github.com/ajaythomas/family_office/blob/main/plan.md). With some back and forth, we landed on an architecture, what to build vs use OSS vs use vendors etc.
 
-I defined a [Claude.md file](https://github.com/ajaythomas/family_office/blob/main/CLAUDE.md) that is read by Claude Code on each prompt. Keep it short under 200 lines so you're not wasting too many tokens.
+I defined a [Claude.md file](https://github.com/ajaythomas/family_office/blob/main/CLAUDE.md) by calling `/init` inside Claude Code. This file is read by Claude Code on each prompt. Keep it short under 200 lines so you're not wasting too many tokens. Both the plan and claude.md are living files which you continuously update through phases.
 
-Both the plan and claude.md are living files which you continuously update through phases. 
+I had a [clear exit criteria](https://github.com/ajaythomas/family_office/blob/main/plan.md#build-order) for each phase - running tests, human in the loop for seeing live demo and commit to remote before Claude Code moved to the next phase. Updates are persisted back on the `plan.md` file like a write-ahead log that any Claude agent/session can read/update to see current status of project. To avoid compaction midway through a work phase, I started a new chat (by calling `/clear`) after each phase was complete. Claude Code can anyway read the plan.md to see what was complete previously, and I didn't run the risk of ever growing context during my conversations.
 
-I had a [clear exit criteria](https://github.com/ajaythomas/family_office/blob/main/plan.md#build-order) for each phase - running tests, human in the loop for seeing live demo and commit to remote before Claude Code moved to the next phase.
+Originally, I was writing my thoughts and notes for my consumption in plan.md but that is not recommended since it is for Claude Code's consumption and anything unnecessary wastes input tokens. What permissions I give Claude Code during my session can be audited at any time, in my project dir: `project/.claude/settings.local.json`. Calling subagents and skills I noticed ate up a lot of my limit (primarily from excessive tool-calling and reading a lot of unnecessary context). Instead, for small tasks, cheaper to ask it directly. I noticed even using Shell Mode where you can write bash commands inside Claude Code eats up some tokens. Better to use your VSCode terminal or other ghostty (my terminal of choice) window for non Claude Code commands.
 
 Sometimes, it jumped to wrong conclusions or did narrow fixes:
 
