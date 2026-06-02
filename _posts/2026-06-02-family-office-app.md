@@ -1,5 +1,5 @@
 ---
-title: Building with Claude Code - A FamilyOffice app written in FastAPI and React
+title: A FamilyOffice app written in FastAPI and React
 categories:
 - Tech
 feature_image: "https://picsum.photos/2560/600?image=872"
