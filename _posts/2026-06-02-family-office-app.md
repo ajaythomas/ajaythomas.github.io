@@ -21,6 +21,19 @@ I also didn't want to be knee deep in any cloud platform ecosystem, so to produc
 
 I captured some of my learnings below:
 
+- [Python ecosystem](#python-ecosystem)
+  - [Login](#login)
+  - [Logging](#logging)
+  - [Cedar Authorization](#cedar-authorization)
+- [VSCode IDE and plugins](#vscode-ide-and-plugins)
+- [OAuth: Google Calendar](#oauth-google-calendar)
+- [Production Deployment](#production-deployment-and-some-docker-tips)
+  - [Docker Profiles](#docker-profiles)
+  - [Caddy](#caddy)
+- [Claude Code](#claude-code)
+- [FrontEnd](#frontend)
+- [Outro](#outro)
+
 ## Python ecosystem
 
 I had used Django in the past and it was a pleasant upgrade using FastAPI especially for a simple hobby app like this. FastAPI also meant I could also use SQLAlchemy (for ORM) and the lighter alembic (SQLAlchemy-compliant tool) vs the built-in Django migrations for their ORM. I continued to use MyPy for static type checking.
@@ -29,7 +42,7 @@ The uvicorn ASGI (Async Web Server Gateway Interface) web server was also a good
 
 uv as a Python package manager is a lot cleaner and readable and faster than pip and its associated tools. [pyproject.toml](https://github.com/ajaythomas/family_office/blob/main/pyproject.toml) is the readable dependency ledger (similar to pip's `requirements.txt`) while uv.lock gives the entire transitive tree of dependencies. Both are good to merge to a public repo. uv.lock ensures deterministic builds every time you run docker compose up - so you get the exact same versions of every package. Without it, a sub-dependency could update overnight and break your build. Also, I don't upgrade dependencies mentioned in my uv.lock unless absolutely needed so my dependency supply chain is not just pulling in every random update even if I don't need it.
 
-PyPI is the Python software repo - where dependencies are installed from when you run `uv install` for the various pyproject.toml dependencies. Similar to npm for NodeJS. If you accidentally installed a dependency and no longer require it, you’ll see it in the pyproject.toml and uv.lock. Just run `uv remove authlib` and uv remove updates both pyproject.toml and uv.lock in one step.
+PyPI is the Python software repo - where dependencies are installed from when you run `uv install` for the various pyproject.toml dependencies. Similar to npm for NodeJS. If you accidentally installed a dependency and no longer require it, you’ll see it in the pyproject.toml and uv.lock. So, as an example, if you wanted to remove the dependency `authlib`, just run `uv remove authlib` and uv remove updates both pyproject.toml and uv.lock in one step.
 
 APScheduler was my cron jobs framework (to send out calendar events) that lived inside the same FastAPI container.
 
